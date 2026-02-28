@@ -10,6 +10,8 @@ interface BattleLogProps {
   entries: BattleLogEntry[];
 }
 
+const MAX_LOG_ENTRIES = 5;
+
 const iconMap = {
   info: <Info className="w-4 h-4" />,
   damage: <Zap className="w-4 h-4" />,
@@ -17,17 +19,20 @@ const iconMap = {
 };
 
 export default function BattleLog({ entries }: BattleLogProps) {
+  // Show only the last 5 entries
+  const recentEntries = entries.slice(-MAX_LOG_ENTRIES);
+
   return (
     <div className="panel-gradient rounded-xl p-4 max-h-56 overflow-y-auto">
       <h3 className="text-xs font-pixel text-muted-foreground tracking-wider mb-3">
-        BATTLE LOG
+        BATTLE LOG {entries.length > MAX_LOG_ENTRIES && <span className="text-[10px]">(Last {MAX_LOG_ENTRIES})</span>}
       </h3>
 
       {entries.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">No actions yet...</p>
       ) : (
         <div className="space-y-2">
-          {entries.map((e, i) => (
+          {recentEntries.map((e, i) => (
             <div
               key={i}
               className={`flex gap-2 items-start rounded-lg px-3 py-2 border ${

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Swords, RotateCcw, Brain, BarChart3, BookOpen } from "lucide-react";
+import { toast } from "sonner";
 
 const MAX_ROUNDS = 3;
 
@@ -89,6 +90,10 @@ export default function BattleArena() {
     setP2((prev) => ({ ...prev, currentHp: prev.maxHp }));
 
     addLog(1, "Battle started! Select your moves.");
+    toast.success(`Battle started: ${p1.name} vs ${p2.name}!`, {
+      description: "Round 1 - Select your moves!",
+      duration: 3000,
+    });
   };
 
   const endGame = (message: string) => {
@@ -156,6 +161,53 @@ export default function BattleArena() {
     setP1((prev) => ({ ...prev, currentHp: newP1Hp }));
     setP2((prev) => ({ ...prev, currentHp: newP2Hp }));
 
+    // Show toast notifications for effectiveness
+    if (eff1 >= 2) {
+      toast.success("Super Effective!", {
+        description: `${p1.name}'s ${move1.name} is super effective!`,
+        duration: 1500,
+      });
+    } else if (eff1 <= 0.5 && eff1 > 0) {
+      toast.warning("Not Very Effective...", {
+        description: `${p1.name}'s ${move1.name} is not very effective...`,
+        duration: 1500,
+      });
+    } else if (eff1 === 0) {
+      toast.error("No Effect!", {
+        description: `${p1.name}'s ${move1.name} had no effect!`,
+        duration: 1500,
+      });
+    }
+
+    if (eff2 >= 2) {
+      toast.success("Super Effective!", {
+        description: `${p2.name}'s ${move2.name} is super effective!`,
+        duration: 1500,
+      });
+    } else if (eff2 <= 0.5 && eff2 > 0) {
+      toast.warning("Not Very Effective...", {
+        description: `${p2.name}'s ${move2.name} is not very effective...`,
+        duration: 1500,
+      });
+    } else if (eff2 === 0) {
+      toast.error("No Effect!", {
+        description: `${p2.name}'s ${move2.name} had no effect!`,
+        duration: 1500,
+      });
+    }
+
+    // Show critical hit toast if damage is high
+    if (dmg1 >= 35) {
+      toast("Critical Hit!", {
+        description: `${p1.name} landed a heavy hit!`,
+        duration: 1500,
+        action: {
+          label: "💥",
+          onClick: () => {},
+        },
+      });
+    }
+
     addLog(
       round,
       `${p1.name}'s ${move1.name} dealt ${dmg1} damage!`,
@@ -179,13 +231,39 @@ export default function BattleArena() {
 
     // End checks
     if (newP2Hp <= 0) {
+      toast.success("🏆 Knockout!", {
+        description: `${p1.name} wins by knockout!`,
+        duration: 5000,
+      });
       endGame(`${p1.name} wins by knockout! 🏆`);
     } else if (newP1Hp <= 0) {
+      toast.success("🏆 Knockout!", {
+        description: `${p2.name} wins by knockout!`,
+        duration: 5000,
+      });
       endGame(`${p2.name} wins by knockout! 🏆`);
     } else if (round >= MAX_ROUNDS) {
-      if (newP1Hp > newP2Hp) endGame(`${p1.name} wins with more HP! 🏆`);
-      else if (newP2Hp > newP1Hp) endGame(`${p2.name} wins with more HP! 🏆`);
-      else endGame("It's a tie! 🤝");
+      if (newP1Hp > newP2Hp) {
+        toast.success("🏆 Victory!", {
+          description: `${p1.name} wins with more HP!`,
+          duration: 5000,
+        });
+        endGame(`${p1.name} wins with more HP! 🏆`);
+      }
+      else if (newP2Hp > newP1Hp) {
+        toast.success("🏆 Victory!", {
+          description: `${p2.name} wins with more HP!`,
+          duration: 5000,
+        });
+        endGame(`${p2.name} wins with more HP! 🏆`);
+      }
+      else {
+        toast.info("🤝 It's a Tie!", {
+          description: "Both Pokémon have the same HP remaining!",
+          duration: 5000,
+        });
+        endGame("It's a tie! 🤝");
+      }
     } else {
       setRound((prev) => prev + 1);
     }
@@ -206,7 +284,7 @@ export default function BattleArena() {
   };
 
   return (
-    <div className="min-h-screen game-gradient">
+    <div className="min-h-screen game-gradient scanlines">
       {/* Header */}
       <header className="text-center pt-8 pb-4">
         <h1 className="font-pixel text-lg md:text-2xl text-primary tracking-wider mb-2">
