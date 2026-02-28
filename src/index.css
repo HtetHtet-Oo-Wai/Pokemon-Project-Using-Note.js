@@ -1,0 +1,155 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 8%;
+    --foreground: 45 30% 90%;
+
+    --card: 220 18% 12%;
+    --card-foreground: 45 30% 90%;
+
+    --popover: 220 18% 14%;
+    --popover-foreground: 45 30% 90%;
+
+    --primary: 38 95% 55%;
+    --primary-foreground: 220 20% 8%;
+
+    --secondary: 220 15% 18%;
+    --secondary-foreground: 45 20% 85%;
+
+    --muted: 220 15% 16%;
+    --muted-foreground: 220 10% 55%;
+
+    --accent: 350 80% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 38 95% 55%;
+
+    --radius: 0.75rem;
+
+    /* Game-specific tokens */
+    --game-surface: 220 18% 10%;
+    --game-panel: 25 30% 12%;
+    --game-panel-border: 25 40% 22%;
+    --game-hp-green: 142 70% 45%;
+    --game-hp-yellow: 45 90% 55%;
+    --game-hp-red: 0 80% 50%;
+    --game-electric: 48 95% 55%;
+    --game-fire: 15 90% 55%;
+    --game-water: 210 85% 55%;
+    --game-grass: 130 60% 45%;
+    --game-psychic: 300 70% 60%;
+    --game-fighting: 15 80% 45%;
+    --game-dark: 260 15% 30%;
+    --game-steel: 210 10% 60%;
+    --game-dragon: 265 70% 55%;
+    --game-fairy: 330 60% 70%;
+    --game-flying: 250 50% 70%;
+    --game-normal: 30 10% 60%;
+    --game-ghost: 265 40% 45%;
+    --game-ice: 195 70% 65%;
+    --game-poison: 280 50% 50%;
+    --game-ground: 35 50% 45%;
+    --game-rock: 35 30% 40%;
+    --game-bug: 80 60% 40%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-pixel {
+    font-family: 'Press Start 2P', cursive;
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3), 0 0 60px hsl(var(--primary) / 0.1);
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.3), 0 0 60px hsl(var(--accent) / 0.1);
+  }
+
+  .game-gradient {
+    background: linear-gradient(135deg, hsl(var(--game-surface)) 0%, hsl(var(--background)) 100%);
+  }
+
+  .panel-gradient {
+    background: linear-gradient(180deg, hsl(var(--game-panel)) 0%, hsl(var(--card)) 100%);
+    border: 1px solid hsl(var(--game-panel-border));
+  }
+
+  .battle-glow {
+    animation: battlePulse 2s ease-in-out infinite;
+  }
+
+  @keyframes battlePulse {
+    0%, 100% { box-shadow: 0 0 10px hsl(var(--primary) / 0.2); }
+    50% { box-shadow: 0 0 30px hsl(var(--primary) / 0.5); }
+  }
+
+  @keyframes shakeHit {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+    20%, 40%, 60%, 80% { transform: translateX(4px); }
+  }
+
+  .animate-shake {
+    animation: shakeHit 0.5s ease-in-out;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  @keyframes damageFloat {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-40px) scale(1.5); }
+  }
+
+  .animate-damage {
+    animation: damageFloat 1s ease-out forwards;
+  }
+
+  @keyframes effectPop {
+    0%   { transform: translate(-50%, 0) scale(0.9); opacity: 0; }
+    15%  { transform: translate(-50%, -6px) scale(1.05); opacity: 1; }
+    60%  { transform: translate(-50%, -14px) scale(1.0); opacity: 1; }
+    100% { transform: translate(-50%, -22px) scale(0.98); opacity: 0; }
+  }
+
+  .animate-effect-pop {
+    animation: effectPop 0.85s ease-out forwards;
+  }
+}
