@@ -12,6 +12,8 @@ import type { BattleLogEntry } from "@/components/BattleLog";
 import NashModal from "@/components/NashModal";
 import RulesModal from "@/components/RulesModal";
 import HpProgressModal, { HpEntry } from "@/components/HpProgressModal";
+import SoundToggle from "@/components/SoundToggle";
+import { useSound } from "@/hooks/useSound";
 import {
   Select,
   SelectContent,
@@ -45,9 +47,17 @@ export default function BattleArena() {
   const [nashOpen, setNashOpen] = useState(false);
   const [hpOpen, setHpOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
+  
+  // Animation states
+  const [showEntrance, setShowEntrance] = useState(false);
+  const [attackingP1, setAttackingP1] = useState(false);
+  const [attackingP2, setAttackingP2] = useState(false);
 
   // ✅ new: prevents clicking moves during animation / resolution
   const [resolving, setResolving] = useState(false);
+  
+  // Sound hook
+  const { soundEnabled, toggleSound, playClick, playAttack, playFaint, playSuperEffective, playNotEffective, markInteracted } = useSound();
 
   const addLog = useCallback(
     (r: number, text: string, type: BattleLogEntry["type"] = "info") => {
@@ -58,17 +68,22 @@ export default function BattleArena() {
 
   const selectP1Pokemon = (name: string) => {
     if (gameActive) return;
+    playClick();
     const t = templates.find((p) => p.name === name);
     if (t) setP1({ ...t });
   };
 
   const selectP2Pokemon = (name: string) => {
     if (gameActive) return;
+    playClick();
     const t = templates.find((p) => p.name === name);
     if (t) setP2({ ...t });
   };
 
   const startGame = () => {
+    markInteracted();
+    playClick();
+    setShowEntrance(true);
     setGameActive(true);
     setRound(1);
     setLog([]);
@@ -94,6 +109,9 @@ export default function BattleArena() {
       description: "Round 1 - Select your moves!",
       duration: 3000,
     });
+    
+    // Hide entrance animation after it completes
+    setTimeout(() => setShowEntrance(false), 600);
   };
 
   const endGame = (message: string) => {
@@ -101,6 +119,7 @@ export default function BattleArena() {
     setResultText(message);
     setResolving(false);
     addLog(round, message, "result");
+    playFaint();
   };
 
   const effectivenessText = (mult: number) => {
@@ -115,6 +134,9 @@ export default function BattleArena() {
     if (!gameActive) return;
     if (resolving) return;
 
+    markInteracted();
+    playAttack();
+    
     const move1 = p1.moves[selectedP1];
     const move2 = p2.moves[selectedP2];
 
@@ -131,6 +153,10 @@ export default function BattleArena() {
     const newP1Hp = Math.max(0, p1.currentHp - dmg2);
 
     setResolving(true);
+    
+    // Set attacking state for animation
+    setAttackingP1(true);
+    setTimeout(() => setAttackingP2(true), 150);
 
     // Show effectiveness popup on the defender
     setEffectTextP2(t1); // P1 attacks P2
@@ -142,122 +168,79 @@ export default function BattleArena() {
       setEffectTextP2(null);
     }, 900);
 
-    // Animate damage
+    // Animate damage - both at the same time
     setShakingP2(true);
     setDamageP2(String(dmg1));
-    setTimeout(() => {
-      setShakingP1(true);
-      setDamageP1(String(dmg2));
-    }, 300);
+    setShakingP1(true);
+    setDamageP1(String(dmg2));
 
-    setTimeout(() => {
-      setShakingP1(false);
-      setShakingP2(false);
-      setDamageP1(null);
-      setDamageP2(null);
-      setResolving(false);
-    }, 900);
+    // Calculate final damage capped by attacker's own HP
+    // You cannot deal more damage than your remaining HP
+    const finalDmg1 = Math.min(dmg1, p1.currentHp);
+    const finalDmg2 = Math.min(dmg2, p2.currentHp);
 
-    setP1((prev) => ({ ...prev, currentHp: newP1Hp }));
-    setP2((prev) => ({ ...prev, currentHp: newP2Hp }));
+    // Apply the capped damage
+    const finalP2Hp = Math.max(0, p2.currentHp - finalDmg1);
+    const finalP1Hp = Math.max(0, p1.currentHp - finalDmg2);
 
-    // Show toast notifications for effectiveness
+    setP2((prev) => ({ ...prev, currentHp: finalP2Hp }));
+    setP1((prev) => ({ ...prev, currentHp: finalP1Hp }));
+
+    // Show toast notifications for effectiveness + play sounds
     if (eff1 >= 2) {
+      playSuperEffective();
       toast.success("Super Effective!", {
         description: `${p1.name}'s ${move1.name} is super effective!`,
         duration: 1500,
       });
     } else if (eff1 <= 0.5 && eff1 > 0) {
+      playNotEffective();
       toast.warning("Not Very Effective...", {
         description: `${p1.name}'s ${move1.name} is not very effective...`,
         duration: 1500,
       });
     } else if (eff1 === 0) {
+      playNotEffective();
       toast.error("No Effect!", {
         description: `${p1.name}'s ${move1.name} had no effect!`,
         duration: 1500,
       });
     }
 
-    if (eff2 >= 2) {
-      toast.success("Super Effective!", {
-        description: `${p2.name}'s ${move2.name} is super effective!`,
-        duration: 1500,
-      });
-    } else if (eff2 <= 0.5 && eff2 > 0) {
-      toast.warning("Not Very Effective...", {
-        description: `${p2.name}'s ${move2.name} is not very effective...`,
-        duration: 1500,
-      });
-    } else if (eff2 === 0) {
-      toast.error("No Effect!", {
-        description: `${p2.name}'s ${move2.name} had no effect!`,
-        duration: 1500,
-      });
-    }
+    addLog(round, `${p1.name}'s ${move1.name} dealt ${finalDmg1} damage!`, "damage");
+    addLog(round, `${p2.name}'s ${move2.name} dealt ${finalDmg2} damage!`, "damage");
 
-    // Show critical hit toast if damage is high
-    if (dmg1 >= 35) {
-      toast("Critical Hit!", {
-        description: `${p1.name} landed a heavy hit!`,
-        duration: 1500,
-        action: {
-          label: "💥",
-          onClick: () => {},
-        },
-      });
-    }
-
-    addLog(
-      round,
-      `${p1.name}'s ${move1.name} dealt ${dmg1} damage!`,
-      "damage"
-    );
-
-    addLog(
-      round,
-      `${p2.name}'s ${move2.name} dealt ${dmg2} damage!`,
-      "damage"
-    );
-
-    const newHistory: HpEntry[] = [
-      ...hpHistory,
-      { round, p1Hp: newP1Hp, p2Hp: newP2Hp, p1Name: p1.name, p2Name: p2.name },
-    ];
-    setHpHistory(newHistory);
-
-    setSelectedP1(null);
-    setSelectedP2(null);
-
-    // End checks
-    if (newP2Hp <= 0) {
+    // Check who won - using final HP values
+    if (finalP2Hp <= 0) {
+      playFaint();
       toast.success("🏆 Knockout!", {
         description: `${p1.name} wins by knockout!`,
         duration: 5000,
       });
-      endGame(`${p1.name} wins by knockout! 🏆`);
-    } else if (newP1Hp <= 0) {
+      endGame(`Player 1 wins by knockout! 🏆`);
+    } else if (finalP1Hp <= 0) {
+      playFaint();
       toast.success("🏆 Knockout!", {
         description: `${p2.name} wins by knockout!`,
         duration: 5000,
       });
-      endGame(`${p2.name} wins by knockout! 🏆`);
+      endGame(`Player 2 wins by knockout! 🏆`);
     } else if (round >= MAX_ROUNDS) {
-      if (newP1Hp > newP2Hp) {
+      if (finalP1Hp > finalP2Hp) {
+        playFaint();
         toast.success("🏆 Victory!", {
           description: `${p1.name} wins with more HP!`,
           duration: 5000,
         });
-        endGame(`${p1.name} wins with more HP! 🏆`);
-      }
-      else if (newP2Hp > newP1Hp) {
+        endGame(`Player 1 wins with more HP! 🏆`);
+      } else if (finalP2Hp > finalP1Hp) {
+        playFaint();
         toast.success("🏆 Victory!", {
           description: `${p2.name} wins with more HP!`,
           duration: 5000,
         });
-        endGame(`${p2.name} wins with more HP! 🏆`);
-      }
-      else {
+        endGame(`Player 2 wins with more HP! 🏆`);
+      } else {
         toast.info("🤝 It's a Tie!", {
           description: "Both Pokémon have the same HP remaining!",
           duration: 5000,
@@ -265,11 +248,22 @@ export default function BattleArena() {
         endGame("It's a tie! 🤝");
       }
     } else {
+      // Continue to next round - reset animation states after a delay
+      setTimeout(() => {
+        setShakingP1(false);
+        setShakingP2(false);
+        setDamageP1(null);
+        setDamageP2(null);
+        setAttackingP1(false);
+        setAttackingP2(false);
+        setResolving(false);
+      }, 100);
       setRound((prev) => prev + 1);
     }
   };
 
   const resetGame = () => {
+    playClick();
     setGameActive(false);
     setRound(0);
     setLog([]);
@@ -278,13 +272,23 @@ export default function BattleArena() {
     setSelectedP1(null);
     setSelectedP2(null);
     setResolving(false);
+    setShowEntrance(false);
 
     setP1((prev) => ({ ...prev, currentHp: prev.maxHp }));
     setP2((prev) => ({ ...prev, currentHp: prev.maxHp }));
   };
 
+  const handleButtonClick = (action: () => void) => {
+    markInteracted();
+    playClick();
+    action();
+  };
+
   return (
     <div className="min-h-screen game-gradient scanlines">
+      {/* Sound Toggle */}
+      <SoundToggle soundEnabled={soundEnabled} onToggle={toggleSound} />
+      
       {/* Header */}
       <header className="text-center pt-8 pb-4">
         <h1 className="font-pixel text-lg md:text-2xl text-primary tracking-wider mb-2">
@@ -295,7 +299,7 @@ export default function BattleArena() {
         </p>
         <div className="mt-4 flex justify-center">
           <button
-            onClick={() => setRulesOpen(true)}
+            onClick={() => handleButtonClick(() => setRulesOpen(true))}
             className="text-xs font-pixel text-primary/90 hover:text-primary underline underline-offset-4"
           >
             View Game Rules
@@ -375,6 +379,8 @@ export default function BattleArena() {
             isShaking={shakingP1}
             damageText={damageP1}
             effectText={effectTextP1}
+            attacking={attackingP1}
+            showEntrance={showEntrance}
           />
           <PokemonCard
             pokemon={p2}
@@ -385,6 +391,8 @@ export default function BattleArena() {
             isShaking={shakingP2}
             damageText={damageP2}
             effectText={effectTextP2}
+            attacking={attackingP2}
+            showEntrance={showEntrance}
           />
         </div>
 
@@ -471,3 +479,4 @@ export default function BattleArena() {
     </div>
   );
 }
+

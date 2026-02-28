@@ -1,4 +1,5 @@
 import { Info, Zap, Trophy } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export type BattleLogEntry = {
   round: number;
@@ -10,7 +11,7 @@ interface BattleLogProps {
   entries: BattleLogEntry[];
 }
 
-const MAX_LOG_ENTRIES = 5;
+const MAX_LOG_ENTRIES = 50; // Increased to show all battle logs
 
 const iconMap = {
   info: <Info className="w-4 h-4" />,
@@ -19,8 +20,8 @@ const iconMap = {
 };
 
 export default function BattleLog({ entries }: BattleLogProps) {
-  // Show only the last 5 entries
-  const recentEntries = entries.slice(-MAX_LOG_ENTRIES);
+  // Show all entries (up to MAX_LOG_ENTRIES)
+  const displayEntries = entries.slice(-MAX_LOG_ENTRIES);
 
   return (
     <div className="panel-gradient rounded-xl p-4 max-h-56 overflow-y-auto">
@@ -32,41 +33,48 @@ export default function BattleLog({ entries }: BattleLogProps) {
         <p className="text-sm text-muted-foreground italic">No actions yet...</p>
       ) : (
         <div className="space-y-2">
-          {recentEntries.map((e, i) => (
-            <div
-              key={i}
-              className={`flex gap-2 items-start rounded-lg px-3 py-2 border ${
-                e.type === "damage"
-                  ? "border-destructive/30 bg-destructive/10"
-                  : e.type === "result"
-                  ? "border-primary/30 bg-primary/10"
-                  : "border-border bg-secondary/20"
-              }`}
-            >
-              <div
-                className={`mt-0.5 ${
+          <AnimatePresence mode="popLayout">
+            {displayEntries.map((e, i) => (
+              <motion.div
+                key={`${e.round}-${i}`}
+                initial={{ opacity: 0, x: -20, height: 0 }}
+                animate={{ opacity: 1, x: 0, height: "auto" }}
+                exit={{ opacity: 0, x: 20, height: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className={`flex gap-2 items-start rounded-lg px-3 py-2 border ${
                   e.type === "damage"
-                    ? "text-destructive"
+                    ? "border-destructive/30 bg-destructive/10"
                     : e.type === "result"
-                    ? "text-primary"
-                    : "text-muted-foreground"
+                    ? "border-primary/30 bg-primary/10"
+                    : "border-border bg-secondary/20"
                 }`}
               >
-                {iconMap[e.type]}
-              </div>
+                <div
+                  className={`mt-0.5 ${
+                    e.type === "damage"
+                      ? "text-destructive"
+                      : e.type === "result"
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {iconMap[e.type]}
+                </div>
 
-              <div className="flex-1">
-                <div className="text-[10px] text-muted-foreground font-mono mb-0.5">
-                  ROUND {e.round}
+                <div className="flex-1">
+                  <div className="text-[10px] text-muted-foreground font-mono mb-0.5">
+                    ROUND {e.round}
+                  </div>
+                  <div className="text-sm text-foreground font-mono leading-snug">
+                    {e.text}
+                  </div>
                 </div>
-                <div className="text-sm text-foreground font-mono leading-snug">
-                  {e.text}
-                </div>
-              </div>
-            </div>
-          ))}
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>
   );
 }
+

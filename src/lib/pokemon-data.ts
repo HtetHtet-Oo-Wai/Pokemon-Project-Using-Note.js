@@ -60,50 +60,70 @@ export const TYPE_COLORS: Record<PokemonType, string> = {
 };
 
 export const typeChart: Record<string, number> = {
+  // Electric
   "Electric-Flying": 2.0,
   "Electric-Water": 2.0,
   "Electric-Electric": 0.5,
   "Electric-Grass": 0.5,
 
+  // Fire
   "Fire-Grass": 2.0,
   "Fire-Ice": 2.0,
   "Fire-Fire": 0.5,
   "Fire-Water": 0.5,
   "Fire-Rock": 0.5,
+  "Fire-Bug": 2.0,
+  "Fire-Dragon": 0.5,
+  "Fire-Steel": 0.5,
 
+  // Water
   "Water-Fire": 2.0,
   "Water-Ground": 2.0,
   "Water-Water": 0.5,
   "Water-Grass": 0.5,
+  "Water-Dragon": 0.5,
 
+  // Grass
   "Grass-Water": 2.0,
   "Grass-Ground": 2.0,
   "Grass-Fire": 0.5,
   "Grass-Grass": 0.5,
+  "Grass-Poison": 0.5,
+  "Grass-Flying": 0.5,
+  "Grass-Bug": 0.5,
+  "Grass-Dragon": 0.5,
+  "Grass-Steel": 0.5,
+  "Grass-Ice": 0.5,
 
+  // Fighting
   "Fighting-Normal": 2.0,
   "Fighting-Ice": 2.0,
   "Fighting-Rock": 2.0,
   "Fighting-Dark": 2.0,
   "Fighting-Steel": 2.0,
+  "Fighting-Ghost": 0.0,
   "Fighting-Flying": 0.5,
   "Fighting-Poison": 0.5,
   "Fighting-Psychic": 0.5,
   "Fighting-Bug": 0.5,
   "Fighting-Fairy": 0.5,
 
+  // Psychic
   "Psychic-Fighting": 2.0,
   "Psychic-Poison": 2.0,
   "Psychic-Psychic": 0.5,
   "Psychic-Steel": 0.5,
   "Psychic-Dark": 0.0,
+  "Psychic-Ghost": 2.0,
 
+  // Dark
   "Dark-Psychic": 2.0,
   "Dark-Ghost": 2.0,
   "Dark-Dark": 0.5,
   "Dark-Fighting": 0.5,
   "Dark-Fairy": 0.5,
 
+  // Steel
   "Steel-Ice": 2.0,
   "Steel-Rock": 2.0,
   "Steel-Fairy": 2.0,
@@ -111,17 +131,114 @@ export const typeChart: Record<string, number> = {
   "Steel-Water": 0.5,
   "Steel-Electric": 0.5,
   "Steel-Steel": 0.5,
+  "Steel-Psychic": 2.0,
+  "Steel-Dragon": 0.5,
+  "Steel-Ghost": 0.5,
+  "Steel-Fighting": 2.0,
+  "Steel-Ground": 0.5,
+  "Steel-Flying": 0.5,
+  "Steel-Bug": 0.5,
+  "Steel-Poison": 0.5,
+  "Steel-Grass": 0.5,
 
+  // Dragon
   "Dragon-Dragon": 2.0,
   "Dragon-Steel": 0.5,
   "Dragon-Fairy": 0.0,
+  "Dragon-Ice": 0.5,
+  "Dragon-Psychic": 0.5,
 
+  // Fairy
   "Fairy-Fighting": 2.0,
   "Fairy-Dragon": 2.0,
   "Fairy-Dark": 2.0,
   "Fairy-Fire": 0.5,
   "Fairy-Poison": 0.5,
   "Fairy-Steel": 0.5,
+
+  // Flying
+  "Flying-Grass": 2.0,
+  "Flying-Fighting": 2.0,
+  "Flying-Bug": 2.0,
+  "Flying-Electric": 0.5,
+  "Flying-Rock": 0.5,
+  "Flying-Steel": 0.5,
+  "Flying-Fire": 2.0,
+  "Flying-Water": 0.5,
+  "Flying-Ice": 2.0,
+  "Flying-Psychic": 2.0,
+  "Flying-Ghost": 0.0,
+
+  // Normal
+  "Normal-Ghost": 0.0,
+  "Normal-Rock": 0.5,
+  "Normal-Steel": 0.5,
+
+  // Ghost
+  "Ghost-Psychic": 2.0,
+  "Ghost-Ghost": 2.0,
+  "Ghost-Dark": 0.5,
+  "Ghost-Normal": 0.0,
+
+  // Ice
+  "Ice-Grass": 2.0,
+  "Ice-Ground": 2.0,
+  "Ice-Flying": 2.0,
+  "Ice-Dragon": 2.0,
+  "Ice-Steel": 0.5,
+  "Ice-Fire": 0.5,
+  "Ice-Water": 0.5,
+  "Ice-Ice": 0.5,
+
+  // Poison
+  "Poison-Grass": 2.0,
+  "Poison-Fairy": 2.0,
+  "Poison-Poison": 0.5,
+  "Poison-Ground": 0.5,
+  "Poison-Rock": 0.5,
+  "Poison-Ghost": 0.5,
+  "Poison-Steel": 0.0,
+  "Poison-Fire": 0.5,
+  "Poison-Water": 0.5,
+  "Poison-Electric": 0.5,
+  "Poison-Ice": 0.5,
+  "Poison-Psychic": 0.5,
+
+  // Ground
+  "Ground-Electric": 2.0,
+  "Ground-Poison": 2.0,
+  "Ground-Rock": 2.0,
+  "Ground-Fire": 2.0,
+  "Ground-Steel": 2.0,
+  "Ground-Grass": 0.5,
+  "Ground-Bug": 0.5,
+  "Ground-Flying": 0.5,
+  "Ground-Ice": 2.0,
+
+  // Rock
+  "Rock-Fire": 2.0,
+  "Rock-Ice": 2.0,
+  "Rock-Fighting": 0.5,
+  "Rock-Ground": 0.5,
+  "Rock-Flying": 2.0,
+  "Rock-Bug": 2.0,
+  "Rock-Steel": 0.5,
+  "Rock-Water": 0.5,
+  "Rock-Grass": 0.5,
+  "Rock-Poison": 2.0,
+
+  // Bug
+  "Bug-Grass": 2.0,
+  "Bug-Psychic": 2.0,
+  "Bug-Dark": 2.0,
+  "Bug-Fire": 0.5,
+  "Bug-Fighting": 0.5,
+  "Bug-Poison": 0.5,
+  "Bug-Flying": 0.5,
+  "Bug-Steel": 0.5,
+  "Bug-Ghost": 0.5,
+  "Bug-Ice": 0.5,
+  "Bug-Rock": 0.5,
 };
 
 export function getTypeEffectiveness(

@@ -1,58 +1,77 @@
-# UI Improvements Plan - COMPLETED
+# Implementation Plan - Animations & Sound Effects
 
-## Task Overview
-Quick UI wins (1-2 days) for Pokémon Battle game
+## Phase 1: Sound System ✅ COMPLETED
+- [x] 1.1 Create `src/hooks/useSound.ts` - Sound management hook with localStorage
+- [x] 1.2 Create `src/components/SoundToggle.tsx` - Mute toggle button component
 
-## ✅ Phase 1: Battle Screen Polish - COMPLETED
+## Phase 2: Animations (Framer Motion + CSS) ✅ COMPLETED
+- [x] 2.1 Update `PokemonCard.tsx` - Add entrance animations (cards slide in from left/right)
+- [x] 2.2 Update `BattleArena.tsx` - Add battle attack animations (attacker shakes forward, target flashes)
+- [x] 2.3 Update `BattleLog.tsx` - Add entry animations using Framer Motion
 
-### ✅ 1.1 HP Bars with Smooth Animation
-- Added smooth CSS transitions for HP bar color changes (green → yellow → red)
-- Added shine effect on HP bars
-- File: `src/components/PokemonCard.tsx`
+## Phase 3: Micro-interactions ✅ COMPLETED
+- [x] 3.1 Update `PokemonCard.tsx` - Add type badge hover tooltips showing effectiveness
+- [x] 3.2 Add details icon button at top-right of each card that opens details dialog when clicked
 
-### ✅ 1.2 Damage Pop Numbers
-- Already implemented with `animate-damage` class
-- Enhanced with better styling
+## Phase 4: Rules & Modals ✅ COMPLETED
+- [x] 4.1 Create `src/components/RulesModal.tsx` - Game rules dialog
+- [x] 4.2 Add "View Game Rules" link in header and Rules button in action buttons
 
-### ✅ 1.3 Turn Log Panel (Last 5 Actions)
-- Modified `BattleLog.tsx` to only show last 5 entries
-- Added indicator showing "(Last 5)" when more entries exist
-- File: `src/components/BattleLog.tsx`
+## Phase 5: Integration & Polish ✅ COMPLETED
+- [x] 5.1 Update `index.css` - Add all CSS animations (flash, entrance, attack, damage float, effect pop)
+- [x] 5.2 Add resolving state to prevent move clicks during animation
+- [x] 5.3 Implement damage capping (cannot deal more damage than your remaining HP)
+- [x] 5.4 Add toast notifications for battle events (super effective, not effective, no effect, knockout, victory)
+- [x] 5.5 Test and verify all features work correctly
 
-## ✅ Phase 2: Better Feedback - COMPLETED
+## Features Implemented:
 
-### ✅ 2.1 Toast Notifications
-- Added toast for: "Super Effective!", "Not Very Effective...", "No Effect!", "Critical Hit!", "Knockout!", "Victory!", "Tie!"
-- Uses existing sonner toast system
-- File: `src/components/BattleArena.tsx`
+### Animations
+- **Entrance animations**: Cards slide in from left/right with scale effect when game starts
+- **Battle attack animation**: 
+  - Attacker shakes forward (translateX toward target)
+  - Target flashes red/white (brightness filter + background color pulse)
+- **Battle log animations**: Entries slide in with fade using Framer Motion
+- **Damage floating text**: Numbers float up and fade out
+- **Effectiveness popup**: Text pops up and fades showing super effective/not very effective
 
-## ✅ Phase 3: Card UI Upgrade - COMPLETED
+### Sound Effects (Web Audio API)
+- **Button click sound**: Short high-pitched beep
+- **Attack sound**: Descending tone
+- **Faint/knockout sound**: Dramatic descending
+- **Super effective sound**: Ascending chime
+- **Not effective sound**: Descending
+- **Mute toggle**: Remembered in localStorage
 
-### ✅ 3.1 Enhanced Card Display
-- Added stats mini-bars (Attack, Defense, Speed)
-- Improved type badges styling with shadows
-- Added Pokemon stats to data model
+### Micro-interactions
+- **Details icon button**: Top-right of each card (Info icon)
+- **Details dialog**: Opens when clicking the info button, shows Pokemon stats, types, moves
+- **Type badge hover tooltip**: Shows type effectiveness (strong vs, weak vs, no effect vs)
+- **Card hover effects**: Lift and glow on hover
+- **Move selection**: Does NOT open details - only selects the move
+- **HP bar**: Smooth transitions with color change (green → yellow → red)
 
-### ✅ 3.2 Hover States
-- Added glow effect on hover
-- Added slight lift (translateY)
-- Shows quick stat preview on hover (ATK/DEF/SPD bars)
-- File: `src/components/PokemonCard.tsx`
+### Game Logic
+- **Damage capping**: Cannot deal more damage than your remaining HP
+- **Resolving state**: Prevents clicking moves during animation/resolution
+- **Toast notifications**: Visual feedback for battle events
+- **Round tracking**: Tracks rounds (max 3) with HP history
 
-## ✅ Phase 4: Theme & Vibe - COMPLETED
+### Modals
+- **Nash Prediction Modal**: Shows Nash equilibrium prediction for optimal moves
+- **HP Progress Modal**: Displays HP progress chart throughout the battle
+- **Rules Modal**: Shows game rules and how to play
 
-### ✅ 4.1 Background Gradient + Scanlines
-- Added subtle scanlines overlay to `index.css`
-- Enhanced game gradient
-- Added scanlines class to main container
-- Files: `src/index.css`, `src/components/BattleArena.tsx`
+## Files Created:
+1. `src/hooks/useSound.ts` - Sound management hook with localStorage
+2. `src/components/SoundToggle.tsx` - Mute toggle button
+3. `src/components/RulesModal.tsx` - Game rules dialog
 
 ## Files Modified:
-1. `src/components/PokemonCard.tsx` - Card UI, hover states, HP animation, stats bars
-2. `src/components/BattleLog.tsx` - Limit to last 5 entries
-3. `src/components/BattleArena.tsx` - Toast notifications, scanlines
-4. `src/index.css` - Add scanlines overlay, HP smooth transitions, card hover effects
-5. `src/lib/pokemon-data.ts` - Added attack/defense stats to Pokemon interface
+1. `src/components/PokemonCard.tsx` - Type tooltips, details icon button, entrance/attack animations, stat bars, details dialog
+2. `src/components/BattleArena.tsx` - Sound integration, animation states, resolving state, damage capping, toast notifications, Rules button
+3. `src/components/BattleLog.tsx` - Framer Motion entry animations, increased max entries to 50
+4. `src/index.css` - All CSS animations (entrance, attack, flash, damage, effect pop, shake, critical, toast)
 
 ## Build Status: ✅ SUCCESS
 
