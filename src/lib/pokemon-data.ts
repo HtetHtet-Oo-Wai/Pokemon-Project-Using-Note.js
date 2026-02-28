@@ -3,6 +3,7 @@ export interface Move {
   name: string;
   type: PokemonType;
   basePower: number;
+  healAmount?: number; // For healing moves like Recover
 }
 
 export type PokemonType =
@@ -425,7 +426,7 @@ export const allPokemonTemplates = (): Pokemon[] => [
     [
       { name: "Water Shuriken", type: "Water", basePower: 30 },
       { name: "Hydro Pump", type: "Water", basePower: 45 },
-      { name: "Double Team", type: "Normal", basePower: 0 },
+      { name: "Double Team", type: "Normal", basePower: 0 , healAmount: 70},
       { name: "Night Slash", type: "Dark", basePower: 35 },
     ],
     "/pokemon/greninja.png",
@@ -458,7 +459,7 @@ export const allPokemonTemplates = (): Pokemon[] => [
       { name: "Psystrike", type: "Psychic", basePower: 45 },
       { name: "Psychic", type: "Psychic", basePower: 40 },
       { name: "Shadow Ball", type: "Ghost", basePower: 35 },
-      { name: "Recover", type: "Normal", basePower: 0 },
+      { name: "Recover", type: "Normal", basePower: 0, healAmount: 90 },
     ],
     "/pokemon/mewtwo.png",
     "M",

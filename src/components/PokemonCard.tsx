@@ -27,6 +27,7 @@ interface PokemonCardProps {
 	isShaking: boolean;
 
 	damageText: string | null;
+	healingText?: string | null;
 	effectText: string | null;
 
 	attacking?: boolean;
@@ -97,6 +98,7 @@ export default function PokemonCard({
 	isActive,
 	isShaking,
 	damageText,
+	healingText,
 	effectText,
 	attacking = false,
 	showEntrance = false,
@@ -156,6 +158,12 @@ export default function PokemonCard({
 				{damageText && (
 					<div className="absolute top-4 left-1/2 -translate-x-1/2 text-2xl font-pixel text-destructive animate-damage z-10">
 						-{damageText}
+					</div>
+				)}
+
+				{healingText && (
+					<div className="absolute top-4 left-1/2 -translate-x-1/2 text-2xl font-pixel text-game-grass animate-heal z-10">
+						+{healingText}
 					</div>
 				)}
 
@@ -355,7 +363,7 @@ export default function PokemonCard({
 										</span>
 
 										<span className="text-xs text-muted-foreground">
-											{move.basePower > 0 ? `${move.basePower}pw` : "-"}
+{move.healAmount ? `+${move.healAmount}HP` : move.basePower > 0 ? `${move.basePower}pw` : "-"}
 										</span>
 									</div>
 								</div>
