@@ -7,8 +7,9 @@ export function buildPayoffMatrix(p1: Pokemon, p2: Pokemon): number[][] {
   for (let i = 0; i < n1; i++) {
     matrix[i] = [];
     for (let j = 0; j < n2; j++) {
-      const dmg1 = calculateDamage(p1, p2, p1.moves[i], true);
-      const dmg2 = calculateDamage(p2, p1, p2.moves[j], true);
+      // Damage capped by attacker's own HP
+      const dmg1 = Math.min(calculateDamage(p1, p2, p1.moves[i], true), p1.maxHp);
+      const dmg2 = Math.min(calculateDamage(p2, p1, p2.moves[j], true), p2.maxHp);
       matrix[i][j] = dmg1 - dmg2;
     }
   }
@@ -58,13 +59,13 @@ export function computeNash(p1: Pokemon, p2: Pokemon) {
   const result = solveZeroSum(matrix);
   if (!result) return null;
   
-  // Expected damage per round
+  // Expected damage per round (capped by attacker's HP)
   let expDmg1 = 0;
   let expDmg2 = 0;
   for (let i = 0; i < p1.moves.length; i++) {
     for (let j = 0; j < p2.moves.length; j++) {
-      const d1 = calculateDamage(p1, p2, p1.moves[i], true);
-      const d2 = calculateDamage(p2, p1, p2.moves[j], true);
+      const d1 = Math.min(calculateDamage(p1, p2, p1.moves[i], true), p1.maxHp);
+      const d2 = Math.min(calculateDamage(p2, p1, p2.moves[j], true), p2.maxHp);
       expDmg1 += result.p1[i] * result.p2[j] * d1;
       expDmg2 += result.p1[i] * result.p2[j] * d2;
     }
