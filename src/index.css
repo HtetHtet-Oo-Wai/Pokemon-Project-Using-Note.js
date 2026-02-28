@@ -161,6 +161,16 @@
     animation: damageFloat 1s ease-out forwards;
   }
 
+  @keyframes healFloat {
+    0% { opacity: 1; transform: translateY(0) scale(1); color: #22c55e; }
+    50% { opacity: 1; transform: translateY(-20px) scale(1.2); }
+    100% { opacity: 0; transform: translateY(-40px) scale(1); color: #22c55e; }
+  }
+
+  .animate-heal {
+    animation: healFloat 1s ease-out forwards;
+  }
+
   @keyframes effectPop {
     0%   { transform: translate(-50%, 0) scale(0.9); opacity: 0; }
     15%  { transform: translate(-50%, -6px) scale(1.05); opacity: 1; }

@@ -1,10 +1,10 @@
-import { Info, Zap, Trophy } from "lucide-react";
+import { Info, Zap, Trophy, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export type BattleLogEntry = {
   round: number;
   text: string;
-  type: "info" | "damage" | "result";
+  type: "info" | "damage" | "result" | "heal";
 };
 
 interface BattleLogProps {
@@ -17,6 +17,7 @@ const iconMap = {
   info: <Info className="w-4 h-4" />,
   damage: <Zap className="w-4 h-4" />,
   result: <Trophy className="w-4 h-4" />,
+  heal: <Heart className="w-4 h-4" />,
 };
 
 export default function BattleLog({ entries }: BattleLogProps) {
@@ -46,6 +47,8 @@ export default function BattleLog({ entries }: BattleLogProps) {
                     ? "border-destructive/30 bg-destructive/10"
                     : e.type === "result"
                     ? "border-primary/30 bg-primary/10"
+                    : e.type === "heal"
+                    ? "border-game-grass/30 bg-game-grass/10"
                     : "border-border bg-secondary/20"
                 }`}
               >
@@ -55,6 +58,8 @@ export default function BattleLog({ entries }: BattleLogProps) {
                       ? "text-destructive"
                       : e.type === "result"
                       ? "text-primary"
+                      : e.type === "heal"
+                      ? "text-game-grass"
                       : "text-muted-foreground"
                   }`}
                 >

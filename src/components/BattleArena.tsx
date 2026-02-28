@@ -34,7 +34,7 @@ const MAX_ROUNDS = 3;
 
 // Keep animation durations in one place (easier to tune)
 const EFFECT_DURATION_MS = 900;
-const RESOLVE_TOTAL_MS = 950; // slightly > EFFECT_DURATION_MS
+const RESOLVE_TOTAL_MS = 1400; // longer for sequential turns
 
 export default function BattleArena() {
   const templates = allPokemonTemplates();
@@ -56,6 +56,8 @@ export default function BattleArena() {
   const [shakingP2, setShakingP2] = useState(false);
   const [damageP1, setDamageP1] = useState<string | null>(null);
   const [damageP2, setDamageP2] = useState<string | null>(null);
+  const [healingP1, setHealingP1] = useState<string | null>(null);
+  const [healingP2, setHealingP2] = useState<string | null>(null);
 
   const [effectTextP1, setEffectTextP1] = useState<string | null>(null);
   const [effectTextP2, setEffectTextP2] = useState<string | null>(null);
@@ -71,6 +73,9 @@ export default function BattleArena() {
 
   // Prevent clicking moves during animation / resolution
   const [resolving, setResolving] = useState(false);
+
+  // Turn order state for sequential battles
+  const [turnOrder, setTurnOrder] = useState<"p1" | "p2" | null>(null);
 
   // Sound hook
   const {
@@ -125,6 +130,7 @@ export default function BattleArena() {
     setSelectedP1(null);
     setSelectedP2(null);
     setResolving(false);
+    setTurnOrder(null);
 
     // Reset HP
     setP1((prev) => ({ ...prev, currentHp: prev.maxHp }));
@@ -154,6 +160,7 @@ export default function BattleArena() {
     setGameActive(false);
     setResultText(message);
     setResolving(false);
+    setTurnOrder(null);
     addLog(round, message, "result");
     playFaint();
   };
@@ -163,10 +170,42 @@ export default function BattleArena() {
     setShakingP2(false);
     setDamageP1(null);
     setDamageP2(null);
+    setHealingP1(null);
+    setHealingP2(null);
     setAttackingP1(false);
     setAttackingP2(false);
     setEffectTextP1(null);
     setEffectTextP2(null);
+  };
+
+  // Helper to apply a single move (attack or heal)
+  const applyMove = (
+    attacker: Pokemon,
+    defender: Pokemon,
+    moveIndex: number,
+    attackerCurrentHp: number,
+    defenderCurrentHp: number,
+    isAttackerP1: boolean
+  ): { newAttackerHp: number; newDefenderHp: number; damage: number; heal: number; effectiveness: number } => {
+    const move = attacker.moves[moveIndex];
+    const effectiveness = getTypeEffectiveness(move.type, defender.types);
+    
+    let damage = 0;
+    let heal = 0;
+    
+    if (move.basePower === 0) {
+      // Healing move (like Recover) - heal 50% of max HP
+      heal = Math.floor(attacker.maxHp * 0.5);
+    } else {
+      // Attack move
+      const rawDmg = calculateDamage(attacker, defender, move);
+      damage = Math.min(rawDmg, attackerCurrentHp);
+    }
+    
+    const newAttackerHp = Math.min(attackerCurrentHp + heal, attacker.maxHp);
+    const newDefenderHp = Math.max(0, defenderCurrentHp - damage);
+    
+    return { newAttackerHp, newDefenderHp, damage, heal, effectiveness };
   };
 
   const battle = () => {
@@ -182,136 +221,357 @@ export default function BattleArena() {
     const move1 = p1.moves[selectedP1];
     const move2 = p2.moves[selectedP2];
 
-    const eff1 = getTypeEffectiveness(move1.type, p2.types);
-    const eff2 = getTypeEffectiveness(move2.type, p1.types);
-
-    const rawDmg1 = calculateDamage(p1, p2, move1);
-    const rawDmg2 = calculateDamage(p2, p1, move2);
-
-    // Cap damage by attacker's remaining HP (your rule)
-    const finalDmg1 = Math.min(rawDmg1, p1.currentHp);
-    const finalDmg2 = Math.min(rawDmg2, p2.currentHp);
-
-    const finalP2Hp = Math.max(0, p2.currentHp - finalDmg1);
-    const finalP1Hp = Math.max(0, p1.currentHp - finalDmg2);
-
-    // --- Animations (attack forward)
-    setAttackingP1(true);
-    setTimeout(() => setAttackingP2(true), 150);
-
-    // Effect popups (defender)
-    const t1 = effectivenessText(eff1);
-    const t2 = effectivenessText(eff2);
-    setEffectTextP2(t1); // P1 attacks P2
-    setTimeout(() => setEffectTextP1(t2), 300); // P2 attacks P1
-
-    setTimeout(() => {
-      setEffectTextP1(null);
-      setEffectTextP2(null);
-    }, EFFECT_DURATION_MS);
-
-    // Damage shake + float
-    setShakingP2(true);
-    setDamageP2(String(finalDmg1));
-    setShakingP1(true);
-    setDamageP1(String(finalDmg2));
-
-    // Apply HP
-    setP2((prev) => ({ ...prev, currentHp: finalP2Hp }));
-    setP1((prev) => ({ ...prev, currentHp: finalP1Hp }));
-
-    // Record HP history (so HP progress modal has data)
-    setHpHistory((prev) => [
-      ...prev,
-      {
-        round,
-        p1Hp: finalP1Hp,
-        p2Hp: finalP2Hp,
-        p1Name: p1.name,
-        p2Name: p2.name,
-      },
-    ]);
-
-    // Sounds + toasts (effectiveness)
-    if (eff1 >= 2) {
-      playSuperEffective();
-      toast.success("Super Effective!", {
-        description: `${p1.name}'s ${move1.name} is super effective!`,
-        duration: 1300,
-      });
-    } else if (eff1 <= 0.5 && eff1 > 0) {
-      playNotEffective();
-      toast.warning("Not Very Effective...", {
-        description: `${p1.name}'s ${move1.name} is not very effective...`,
-        duration: 1300,
-      });
-    } else if (eff1 === 0) {
-      playNotEffective();
-      toast.error("No Effect!", {
-        description: `${p1.name}'s ${move1.name} had no effect!`,
-        duration: 1300,
-      });
+    // Determine turn order based on speed
+    // Higher speed goes first
+    let first: "p1" | "p2";
+    let second: "p1" | "p2";
+    
+    if (p1.speed >= p2.speed) {
+      first = "p1";
+      second = "p2";
+    } else {
+      first = "p2";
+      second = "p1";
     }
 
-    addLog(round, `${p1.name}'s ${move1.name} dealt ${finalDmg1} damage!`, "damage");
-    addLog(round, `${p2.name}'s ${move2.name} dealt ${finalDmg2} damage!`, "damage");
+    setTurnOrder(first);
 
-    // Decide result AFTER animations settle (cleaner UX)
+    // Log the turn order
+    const firstName = first === "p1" ? p1.name : p2.name;
+    addLog(round, `${firstName} is faster and moves first!`, "info");
+
+    // Initial HP state
+    let p1Hp = p1.currentHp;
+    let p2Hp = p2.currentHp;
+
+    // === FIRST TURN (faster Pokemon) ===
+    if (first === "p1") {
+      // P1 moves first
+      const result = applyMove(p1, p2, selectedP1, p1Hp, p2Hp, true);
+      p1Hp = result.newAttackerHp;
+      p2Hp = result.newDefenderHp;
+
+      // Animate P1 attack
+      setAttackingP1(true);
+      
+      // Show effectiveness text for attack
+      if (result.damage > 0) {
+        const effText = effectivenessText(result.effectiveness);
+        if (effText) {
+          setEffectTextP2(effText);
+          setTimeout(() => setEffectTextP2(null), EFFECT_DURATION_MS);
+        }
+        
+        // Shake defender and show damage
+        setShakingP2(true);
+        setDamageP2(String(result.damage));
+        
+        // Sound effects
+        if (result.effectiveness >= 2) {
+          playSuperEffective();
+          toast.success("Super Effective!", {
+            description: `${p1.name}'s ${move1.name} is super effective!`,
+            duration: 1300,
+          });
+        } else if (result.effectiveness <= 0.5 && result.effectiveness > 0) {
+          playNotEffective();
+          toast.warning("Not Very Effective...", {
+            description: `${p1.name}'s ${move1.name} is not very effective...`,
+            duration: 1300,
+          });
+        } else if (result.effectiveness === 0) {
+          playNotEffective();
+          toast.error("No Effect!", {
+            description: `${p1.name}'s ${move1.name} had no effect!`,
+            duration: 1300,
+          });
+        }
+      } else if (result.heal > 0) {
+        // Healing move
+        setHealingP1(String(result.heal));
+        toast.info("💚 Heal!", {
+          description: `${p1.name} recovered ${result.heal} HP!`,
+          duration: 1300,
+        });
+        addLog(round, `${p1.name}'s ${move1.name} recovered ${result.heal} HP!`, "heal");
+      }
+
+      // Log damage/heal
+      if (result.damage > 0) {
+        addLog(round, `${p1.name}'s ${move1.name} dealt ${result.damage} damage!`, "damage");
+      }
+
+      // Check if P2 fainted
+      if (p2Hp <= 0) {
+        setTimeout(() => {
+          toast.success("🏆 Knockout!", {
+            description: `${p1.name} wins by knockout!`,
+            duration: 3000,
+          });
+          endGame(`Player 1 wins by knockout! 🏆`);
+          resetAnimations();
+          setP2((prev) => ({ ...prev, currentHp: 0 }));
+        }, RESOLVE_TOTAL_MS);
+        return;
+      }
+    } else {
+      // P2 moves first
+      const result = applyMove(p2, p1, selectedP2, p2Hp, p1Hp, false);
+      p2Hp = result.newAttackerHp;
+      p1Hp = result.newDefenderHp;
+
+      // Animate P2 attack
+      setAttackingP2(true);
+      
+      // Show effectiveness text for attack
+      if (result.damage > 0) {
+        const effText = effectivenessText(result.effectiveness);
+        if (effText) {
+          setEffectTextP1(effText);
+          setTimeout(() => setEffectTextP1(null), EFFECT_DURATION_MS);
+        }
+        
+        // Shake defender and show damage
+        setShakingP1(true);
+        setDamageP1(String(result.damage));
+        
+        // Sound effects
+        if (result.effectiveness >= 2) {
+          playSuperEffective();
+          toast.success("Super Effective!", {
+            description: `${p2.name}'s ${move2.name} is super effective!`,
+            duration: 1300,
+          });
+        } else if (result.effectiveness <= 0.5 && result.effectiveness > 0) {
+          playNotEffective();
+          toast.warning("Not Very Effective...", {
+            description: `${p2.name}'s ${move2.name} is not very effective...`,
+            duration: 1300,
+          });
+        } else if (result.effectiveness === 0) {
+          playNotEffective();
+          toast.error("No Effect!", {
+            description: `${p2.name}'s ${move2.name} had no effect!`,
+            duration: 1300,
+          });
+        }
+      } else if (result.heal > 0) {
+        // Healing move
+        setHealingP2(String(result.heal));
+        toast.info("💚 Heal!", {
+          description: `${p2.name} recovered ${result.heal} HP!`,
+          duration: 1300,
+        });
+        addLog(round, `${p2.name}'s ${move2.name} recovered ${result.heal} HP!`, "heal");
+      }
+
+      // Log damage/heal
+      if (result.damage > 0) {
+        addLog(round, `${p2.name}'s ${move2.name} dealt ${result.damage} damage!`, "damage");
+      }
+
+      // Check if P1 fainted
+      if (p1Hp <= 0) {
+        setTimeout(() => {
+          toast.success("🏆 Knockout!", {
+            description: `${p2.name} wins by knockout!`,
+            duration: 3000,
+          });
+          endGame(`Player 2 wins by knockout! 🏆`);
+          resetAnimations();
+          setP1((prev) => ({ ...prev, currentHp: 0 }));
+        }, RESOLVE_TOTAL_MS);
+        return;
+      }
+    }
+
+    // === SECOND TURN (slower Pokemon) ===
+    // Delay for sequential animation
     setTimeout(() => {
-      // KO checks
-      if (finalP2Hp <= 0) {
-        toast.success("🏆 Knockout!", {
-          description: `${p1.name} wins by knockout!`,
-          duration: 3000,
-        });
-        endGame(`Player 1 wins by knockout! 🏆`);
-        resetAnimations();
-        return;
-      }
+      setTurnOrder(second);
+      
+      if (second === "p1") {
+        // P1 moves second
+        const result = applyMove(p1, p2, selectedP1, p1Hp, p2Hp, true);
+        p1Hp = result.newAttackerHp;
+        p2Hp = result.newDefenderHp;
 
-      if (finalP1Hp <= 0) {
-        toast.success("🏆 Knockout!", {
-          description: `${p2.name} wins by knockout!`,
-          duration: 3000,
-        });
-        endGame(`Player 2 wins by knockout! 🏆`);
-        resetAnimations();
-        return;
-      }
+        // Animate P1 result.newDefender attack
+        setAttackingP1(true);
+        
+        // Show effectiveness text for attack
+        if (result.damage > 0) {
+          const effText = effectivenessText(result.effectiveness);
+          if (effText) {
+            setEffectTextP2(effText);
+            setTimeout(() => setEffectTextP2(null), EFFECT_DURATION_MS);
+          }
+          
+          // Shake defender and show damage
+          setShakingP2(true);
+          setDamageP2(String(result.damage));
+          
+          // Sound effects
+          if (result.effectiveness >= 2) {
+            playSuperEffective();
+          } else if (result.effectiveness <= 0.5 && result.effectiveness > 0) {
+            playNotEffective();
+          } else if (result.effectiveness === 0) {
+            playNotEffective();
+          }
+          
+          addLog(round, `${p1.name}'s ${move1.name} dealt ${result.damage} damage!`, "damage");
+        } else if (result.heal > 0) {
+          // Healing move
+          setHealingP1(String(result.heal));
+          toast.info("💚 Heal!", {
+            description: `${p1.name} recovered ${result.heal} HP!`,
+            duration: 1300,
+          });
+          addLog(round, `${p1.name}'s ${move1.name} recovered ${result.heal} HP!`, "heal");
+        }
 
-      // Last round outcome
-      if (round >= MAX_ROUNDS) {
-        if (finalP1Hp > finalP2Hp) {
-          toast.success("🏆 Victory!", {
-            description: `${p1.name} wins with more HP!`,
-            duration: 3000,
-          });
-          endGame(`Player 1 wins with more HP! 🏆`);
-          resetAnimations();
+        // Check if P2 fainted
+        if (p2Hp <= 0) {
+          setTimeout(() => {
+            toast.success("🏆 Knockout!", {
+              description: `${p1.name} wins by knockout!`,
+              duration: 3000,
+            });
+            endGame(`Player 1 wins by knockout! 🏆`);
+            resetAnimations();
+          }, RESOLVE_TOTAL_MS);
           return;
-        } else if (finalP2Hp > finalP1Hp) {
-          toast.success("🏆 Victory!", {
-            description: `${p2.name} wins with more HP!`,
-            duration: 3000,
+        }
+      } else {
+        // P2 moves second
+        const result = applyMove(p2, p1, selectedP2, p2Hp, p1Hp, false);
+        p2Hp = result.newAttackerHp;
+        p1Hp = result.newDefenderHp;
+
+        // Animate P2 attack
+        setAttackingP2(true);
+        
+        // Show effectiveness text for attack
+        if (result.damage > 0) {
+          const effText = effectivenessText(result.effectiveness);
+          if (effText) {
+            setEffectTextP1(effText);
+            setTimeout(() => setEffectTextP1(null), EFFECT_DURATION_MS);
+          }
+          
+          // Shake defender and show damage
+          setShakingP1(true);
+          setDamageP1(String(result.damage));
+          
+          // Sound effects
+          if (result.effectiveness >= 2) {
+            playSuperEffective();
+          } else if (result.effectiveness <= 0.5 && result.effectiveness > 0) {
+            playNotEffective();
+          } else if (result.effectiveness === 0) {
+            playNotEffective();
+          }
+          
+          addLog(round, `${p2.name}'s ${move2.name} dealt ${result.damage} damage!`, "damage");
+        } else if (result.heal > 0) {
+          // Healing move
+          setHealingP2(String(result.heal));
+          toast.info("💚 Heal!", {
+            description: `${p2.name} recovered ${result.heal} HP!`,
+            duration: 1300,
           });
-          endGame(`Player 2 wins with more HP! 🏆`);
-          resetAnimations();
-          return;
-        } else {
-          toast.info("🤝 It's a Tie!", {
-            description: "Both Pokémon have the same HP remaining!",
-            duration: 3000,
-          });
-          endGame("It's a tie! 🤝");
-          resetAnimations();
+          addLog(round, `${p2.name}'s ${move2.name} recovered ${result.heal} HP!`, "heal");
+        }
+
+        // Check if P1 fainted
+        if (p1Hp <= 0) {
+          setTimeout(() => {
+            toast.success("🏆 Knockout!", {
+              description: `${p2.name} wins by knockout!`,
+              duration: 3000,
+            });
+            endGame(`Player 2 wins by knockout! 🏆`);
+            resetAnimations();
+          }, RESOLVE_TOTAL_MS);
           return;
         }
       }
 
-      // Continue
-      resetAnimations();
-      setResolving(false);
-      setRound((prev) => prev + 1);
+      // Apply final HP changes
+      setP1((prev) => ({ ...prev, currentHp: p1Hp }));
+      setP2((prev) => ({ ...prev, currentHp: p2Hp }));
+
+      // Record HP history
+      setHpHistory((prev) => [
+        ...prev,
+        {
+          round,
+          p1Hp,
+          p2Hp,
+          p1Name: p1.name,
+          p2Name: p2.name,
+        },
+      ]);
+
+      // Decide result after animations settle
+      setTimeout(() => {
+        // KO checks (should already be handled above, but just in case)
+        if (p2Hp <= 0) {
+          toast.success("🏆 Knockout!", {
+            description: `${p1.name} wins by knockout!`,
+            duration: 3000,
+          });
+          endGame(`Player 1 wins by knockout! 🏆`);
+          resetAnimations();
+          return;
+        }
+
+        if (p1Hp <= 0) {
+          toast.success("🏆 Knockout!", {
+            description: `${p2.name} wins by knockout!`,
+            duration: 3000,
+          });
+          endGame(`Player 2 wins by knockout! 🏆`);
+          resetAnimations();
+          return;
+        }
+
+        // Last round outcome
+        if (round >= MAX_ROUNDS) {
+          if (p1Hp > p2Hp) {
+            toast.success("🏆 Victory!", {
+              description: `${p1.name} wins with more HP!`,
+              duration: 3000,
+            });
+            endGame(`Player 1 wins with more HP! 🏆`);
+            resetAnimations();
+            return;
+          } else if (p2Hp > p1Hp) {
+            toast.success("🏆 Victory!", {
+              description: `${p2.name} wins with more HP!`,
+              duration: 3000,
+            });
+            endGame(`Player 2 wins with more HP! 🏆`);
+            resetAnimations();
+            return;
+          } else {
+            toast.info("🤝 It's a Tie!", {
+              description: "Both Pokémon have the same HP remaining!",
+              duration: 3000,
+            });
+            endGame("It's a tie! 🤝");
+            resetAnimations();
+            return;
+          }
+        }
+
+        // Continue to next round
+        resetAnimations();
+        setResolving(false);
+        setTurnOrder(null);
+        setRound((prev) => prev + 1);
+      }, RESOLVE_TOTAL_MS);
     }, RESOLVE_TOTAL_MS);
   };
 
@@ -326,6 +586,7 @@ export default function BattleArena() {
     setSelectedP2(null);
     setResolving(false);
     setShowEntrance(false);
+    setTurnOrder(null);
     resetAnimations();
 
     setP1((prev) => ({ ...prev, currentHp: prev.maxHp }));
@@ -374,6 +635,17 @@ export default function BattleArena() {
           </span>
         </div>
       </div>
+
+      {/* Turn order indicator */}
+      {turnOrder && gameActive && (
+        <div className="text-center mb-4">
+          <div className="inline-block px-4 py-1 rounded-full bg-primary/20 border border-primary/50">
+            <span className="font-pixel text-xs text-primary">
+              {turnOrder === "p1" ? `▶ ${p1.name}'s Turn` : `▶ ${p2.name}'s Turn`}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Selected move preview (makes battle clearer) */}
       {gameActive && (
@@ -454,6 +726,7 @@ export default function BattleArena() {
             isActive={gameActive && !resolving}
             isShaking={shakingP1}
             damageText={damageP1}
+            healingText={healingP1}
             effectText={effectTextP1}
             attacking={attackingP1}
             showEntrance={showEntrance}
@@ -467,6 +740,7 @@ export default function BattleArena() {
             isActive={gameActive && !resolving}
             isShaking={shakingP2}
             damageText={damageP2}
+            healingText={healingP2}
             effectText={effectTextP2}
             attacking={attackingP2}
             showEntrance={showEntrance}
