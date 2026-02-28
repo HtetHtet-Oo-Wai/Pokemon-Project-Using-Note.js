@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pokemon, TYPE_COLORS, PokemonType } from '@/lib/pokemon-data';
+import { Sword, Shield, Zap } from 'lucide-react';
 
 interface PokemonCardProps {
   pokemon: Pokemon;
@@ -18,6 +19,12 @@ function getHpColor(pct: number): string {
   return 'bg-red-500';
 }
 
+function getHpColorHsl(pct: number): string {
+  if (pct > 0.5) return 'hsl(142, 70%, 45%)';
+  if (pct > 0.25) return 'hsl(45, 90%, 55%)';
+  return 'hsl(0, 80%, 50%)';
+}
+
 function getTypeColorClass(type: PokemonType): string {
   return TYPE_COLORS[type] || 'bg-muted';
 }
@@ -29,11 +36,37 @@ function getEffectClass(text: string) {
   return "text-primary";
 }
 
+// Mini stat bar component
+function StatBar({ icon: Icon, label, value, maxValue = 150, color }: { 
+  icon: React.ElementType; 
+  label: string; 
+  value: number; 
+  maxValue?: number;
+  color: string;
+}) {
+  const pct = Math.min((value / maxValue) * 100, 100);
+  
+  return (
+    <div className="flex items-center gap-2">
+      <Icon className="w-3 h-3 text-muted-foreground" />
+      <span className="text-[10px] text-muted-foreground w-8">{label}</span>
+      <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+        <div 
+          className={`h-full ${color} rounded-full transition-all duration-500`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="text-[10px] font-mono text-muted-foreground w-5">{value}</span>
+    </div>
+  );
+}
+
 export default function PokemonCard({
   pokemon, player, selectedMove, onSelectMove, isActive, isShaking, damageText, effectText
 }: PokemonCardProps) {
   const hpPct = pokemon.currentHp / pokemon.maxHp;
   const [imageOk, setImageOk] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     setImageOk(true);
@@ -42,7 +75,11 @@ export default function PokemonCard({
   const showImage = Boolean(pokemon.imageSrc) && imageOk;
 
   return (
-    <div className={`panel-gradient rounded-xl p-6 relative transition-all duration-300 ${isShaking ? 'animate-shake' : ''}`}>
+    <div 
+      className={`panel-gradient rounded-xl p-6 relative transition-all duration-300 card-hover-lift card-glow-hover ${isShaking ? 'animate-shake' : ''}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       {damageText && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 text-2xl font-pixel text-destructive animate-damage z-10">
           -{damageText}
@@ -65,7 +102,7 @@ export default function PokemonCard({
 
       {/* Pokemon Avatar */}
       <div className="flex justify-center mb-4">
-        <div className="w-28 h-28 rounded-full bg-secondary flex items-center justify-center text-6xl border-2 border-border shadow-lg overflow-hidden">
+        <div className={`w-28 h-28 rounded-full bg-secondary flex items-center justify-center text-6xl border-2 border-border shadow-lg overflow-hidden transition-all duration-300 ${isHovered ? 'scale-110 ring-2 ring-primary/50' : ''}`}>
           {showImage ? (
             <img
               src={pokemon.imageSrc}
@@ -83,23 +120,38 @@ export default function PokemonCard({
       <h2 className="text-xl font-bold text-center text-foreground mb-2">{pokemon.name}</h2>
       <div className="flex gap-2 justify-center mb-4">
         {pokemon.types.map(t => (
-          <span key={t} className={`${getTypeColorClass(t)} text-xs px-3 py-1 rounded-full font-semibold text-primary-foreground`}>
+          <span key={t} className={`${getTypeColorClass(t)} text-xs px-3 py-1 rounded-full font-semibold text-primary-foreground shadow-sm`}>
             {t}
           </span>
         ))}
       </div>
 
-      {/* HP Bar */}
-      <div className="mb-6">
+      {/* HP Bar with smooth transition */}
+      <div className="mb-4">
         <div className="flex justify-between text-xs text-muted-foreground mb-1">
           <span>HP</span>
           <span>{pokemon.currentHp}/{pokemon.maxHp}</span>
         </div>
-        <div className="w-full h-4 bg-secondary rounded-full overflow-hidden">
+        <div className="w-full h-4 bg-secondary rounded-full overflow-hidden shadow-inner">
           <div
-            className={`h-full ${getHpColor(hpPct)} rounded-full transition-all duration-500 ease-out`}
-            style={{ width: `${Math.max(0, hpPct * 100)}%` }}
-          />
+            className="h-full rounded-full hp-bar-transition relative overflow-hidden"
+            style={{ 
+              width: `${Math.max(0, hpPct * 100)}%`,
+              backgroundColor: getHpColorHsl(hpPct)
+            }}
+          >
+            {/* HP bar shine effect */}
+            <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/20 rounded-t-full" />
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Mini Bars (shown on hover) */}
+      <div className={`overflow-hidden transition-all duration-300 ${isHovered ? 'max-h-28 opacity-100 my-2' : 'max-h-0 opacity-0 my-0'}`}>
+        <div className="space-y-1.5 py-2 border-t border-border/50">
+          <StatBar icon={Sword} label="ATK" value={pokemon.attack} color="bg-red-500" />
+          <StatBar icon={Shield} label="DEF" value={pokemon.defense} color="bg-blue-500" />
+          <StatBar icon={Zap} label="SPD" value={pokemon.speed} color="bg-yellow-500" />
         </div>
       </div>
 

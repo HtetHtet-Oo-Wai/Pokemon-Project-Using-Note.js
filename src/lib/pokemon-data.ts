@@ -30,7 +30,9 @@ export interface Pokemon {
   types: PokemonType[];
   maxHp: number;
   currentHp: number;
-  speed: number; // new (for turn order / future upgrades)
+  speed: number;
+  attack: number;
+  defense: number;
   moves: Move[];
   imageSrc: string;
   emoji: string;
@@ -216,7 +218,9 @@ export function createPokemon(
   moves: Move[],
   imageSrc: string,
   emoji: string,
-  speed: number
+  speed: number,
+  attack: number,
+  defense: number
 ): Pokemon {
   return {
     name,
@@ -224,6 +228,8 @@ export function createPokemon(
     maxHp: hp,
     currentHp: hp,
     speed,
+    attack,
+    defense,
     moves,
     imageSrc,
     emoji,
@@ -243,7 +249,9 @@ export const allPokemonTemplates = (): Pokemon[] => [
     ],
     "/pokemon/pikachu.png",
     "P",
-    90
+    90,
+    55,
+    40
   ),
   createPokemon(
     "Charizard",
@@ -257,7 +265,9 @@ export const allPokemonTemplates = (): Pokemon[] => [
     ],
     "/pokemon/charizard.png",
     "C",
-    80
+    80,
+    84,
+    78
   ),
   createPokemon(
     "Venusaur",
@@ -271,7 +281,9 @@ export const allPokemonTemplates = (): Pokemon[] => [
     ],
     "/pokemon/venusaur.png",
     "V",
-    60
+    60,
+    82,
+    83
   ),
   createPokemon(
     "Blastoise",
@@ -285,7 +297,9 @@ export const allPokemonTemplates = (): Pokemon[] => [
     ],
     "/pokemon/blastoise.png",
     "B",
-    58
+    58,
+    83,
+    100
   ),
   createPokemon(
     "Greninja",
@@ -299,7 +313,9 @@ export const allPokemonTemplates = (): Pokemon[] => [
     ],
     "/pokemon/greninja.png",
     "G",
-    95
+    95,
+    103,
+    71
   ),
   createPokemon(
     "Lucario",
@@ -313,7 +329,9 @@ export const allPokemonTemplates = (): Pokemon[] => [
     ],
     "/pokemon/lucario.png",
     "L",
-    70
+    70,
+    130,
+    95
   ),
   createPokemon(
     "Mewtwo",
@@ -327,6 +345,8 @@ export const allPokemonTemplates = (): Pokemon[] => [
     ],
     "/pokemon/mewtwo.png",
     "M",
-    85
+    85,
+    150,
+    70
   ),
 ];
